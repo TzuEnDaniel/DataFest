@@ -1,0 +1,20 @@
+require(quanteda)
+require(quanteda.textstats)
+require(data.table)
+require(dplyr)
+require(ggplot2)
+require(textplot)
+require(quanteda.textplots)
+datafest<-read.csv('questionposts.csv')
+pa_text<-filter(datafest,StateAbbr=='PA')
+pa_corpus<-corpus(pa_text,text_field = 'PostText')
+pa_corpus
+head(docvars(pa_corpus))
+summary(corpus_subset(pa_corpus, CreatedUtc %like% "2021-07-10"))
+pa_corpClean<-tokens(pa_corpus,remove_punct = TRUE,
+                     remove_symbols = TRUE)
+pa_coll<-textstat_collocations(pa_corpClean,size=2,min_count=25,
+                               tolower(pa_corpClean$text2))
+dfm(pa_text$PostText, remove_punct = TRUE)
+textplot_wordcloud(pa_corpClean,min_count=50,
+                   color=RColorBrewer::brewer.pal(8,'Dark2'))

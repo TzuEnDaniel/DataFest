@@ -1,0 +1,457 @@
+#' ## Data import and management
+#'
+#### First, install and load the tidyverse package which includes a set of packages that work together for
+#### data manipulation (i.e. dplyr, purr, and tidyr) and visualization (importantly ggplot2).
+install.packages("tidyverse")
+library(tidyverse)
+
+#### ggplot2 comes with built-in datasets. 
+#For this session, we will use the "diamonds" dataset, 
+#containing information about several attributes of 54000 diamonds. 
+#We can access it using the 'data' function:
+
+data("diamonds")
+
+#See that we've added "diamonds" to our global environment. Once we've loaded 
+#the diamonds dataset, we can view it using View: 
+View(diamonds)
+
+
+#Look at the structure of your dataset using the str() function
+
+str(diamonds)
+
+
+#View Variable names 
+names(diamonds)
+
+# The summary() function allows us to quickly view summary 
+#statistics on each of our variables
+
+summary(diamonds)
+
+
+#Filter dataset to only retain specific rows that meet a set requirement
+#using the filter() function
+
+diamonds %>% filter(cut == "Fair")
+diamonds %>% filter(!cut == "Fair")
+
+#Select which variables you would like to see
+
+diamonds %>% select(cut, color)
+
+#Create new variables with the mutate() functions. Often, this function will have
+#other functions nested within
+diamonds %>% 
+  mutate(m = mean(price),     # calculates the mean price
+         sd = sd(price),      # calculates standard deviation
+         med = median(price)) # calculates the median price
+
+
+##Data Visualization using ggplot2
+# The 7 Grammar of Graphics Layers (ggplot2) -----
+
+#### For ease of use and quicker plotting, we will use stratified sampling to subset the diamonds
+#### data set.
+##Group variables together for your analysis using the group_by() function.
+#be sure to ungroup() before further analysis
+
+diamonds2 <- diamonds %>%
+  group_by(clarity, cut) %>%
+  sample_frac(size = 0.1) %>%
+  ungroup()
+  
+
+## 1. The Data Layer ----- 
+#### Specifies the data set to be plotted.
+diamonds2 %>% 
+  ggplot(data = diamonds2)
+
+#### Can also be piped in!
+diamonds2 %>%
+  ggplot()
+
+
+## 2. The aesthetics (aes) layer -----
+#### Specifies how we want to represent the variables in the plot.
+p <- ggplot(data = diamonds2,
+            aes(x = carat,
+                y = price))
+
+p
+
+
+## 3. The geometry (geom) layer -----
+#### Identifies how the data points will be represented.
+p <- p + geom_point()
+
+p 
+
+
+## 4. The facets layer -----
+#### Divides the plot into subplots based on one or more discrete variables.
+p <- p + facet_wrap(~ cut)
+
+p
+
+
+## 5. The statistics (stat) layer -----
+#### Can be used to create and overlay subplots.
+p <- p + stat_smooth(method = "lm")
+
+p
+
+
+## 6. The Coordinates (coord) Layer -----
+#### Allows adjustment of the axes.
+p <- p + coord_flip()
+
+p
+
+
+## 7. The Themes Layer -----
+#### Modifies appearance.
+p <- p + theme_bw()
+
+p
+
+##Labeling your graph
+#You can specify multiple label components including: title, subtitle, caption, 
+#and tag. The x-axis, y-axis, and plot title can be separate arguments.
+
+p<- p + labs(x= "carat", 
+             y = "price", 
+             title = "The title of my Graph here")
+
+p
+
+##All together, this would produce the following code
+
+plot1 <- ggplot(data = diamonds2,
+       aes(x = carat,
+           y = price)) +
+  geom_point() + 
+  facet_wrap(~ cut) + 
+  stat_smooth(method = "lm") +
+  coord_flip() +
+  theme_bw() +
+  labs(x= "carat", 
+       y = "price", 
+       title = "The title of my Graph here")
+
+
+# Intermediate gg-Plotting -----
+##Graphing the mean price of diamonds grouped by clarity and cut
+diamonds2 %>% 
+  group_by(clarity, cut) %>% 
+  summarize(m = mean(price)) %>% 
+  ggplot(aes(x = clarity, y = m, group = cut, color = cut)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~cut) +
+  labs(x= "my x-axis label here", 
+       y = "my y-axis label here", 
+       title = "The title of my Graph here") +
+  theme_classic()
+
+## 1. Aesthetics -----
+#### For detailed information on aesthetics in ggplot:
+vignette("ggplot2-specs")
+
+#### You can also find geometry-specific aesthetics by querying the help for a geom element.
+?geom_point()
+
+
+### Colour Palettes ------
+#### Create a ggplot object where the price variable is plotted against carat as a scatterplot 
+#### and cut defined by the colour aesthetic.
+p <- ggplot(diamonds2,
+            aes(x = carat,
+                y = price,
+                colour = cut)) +
+  geom_point()
+
+#### Generate the plot with default ggplot2 colors.
+p
+
+#### Change the colors to a pre-defined brewer palette.
+p + scale_color_brewer(palette = "Set3")
+
+#### More on brewer palettes can be found here:
+#### https://r-graph-gallery.com/38-rcolorbrewers-palettes
+
+#### Create a plot using manually selected colors.
+p + scale_color_manual(values = c("red4",
+                                  "blue1",
+                                  "green4",
+                                  "yellow3",
+                                  "purple4"))
+
+#### This link will show all named (non-hex) colors:
+#### http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+
+
+### Modifying points -----
+#### Generate the same ggplot object as above but without assigning a geometry
+p <- ggplot(diamonds2,
+            aes(x = carat,
+                y = price,
+                color = cut))
+
+#### Change point transparency to 25%.
+p + geom_point(alpha = 0.25)
+
+#### Change point size to 1/3 of its default value (1.5).
+p + geom_point(size = 0.5)
+
+#### Change the point shape into '+' signs.
+p + geom_point(pch = 3)
+
+#### You can use ?pch to display more information and types of points.
+?pch
+
+
+
+
+## 2. Geometries -----
+### One Variable ----
+#### For discrete variables we can draw a barplot with geom_bar() to see how many times each
+#### value is observed.
+ggplot(diamonds2,
+       aes(x = cut)) +
+  geom_bar()
+
+#### Continuous variables have a similar function, geom_histogram(), that "bins" values to see the
+#### spread of the data.
+ggplot(diamonds2,
+       aes(x = price)) +
+  geom_histogram()
+
+#### We can also overlay geometries to see more information.  For instance, we can add a smoothed
+#### version of the histogram over the histogram with geom_density() by appending the function after
+#### geom_histogram().
+ggplot(diamonds,
+       aes(x = price,
+           y = ..density..)) +
+  geom_histogram() +
+  geom_density()
+
+
+### Two Variables -----
+#### Box plots and violin plots are useful when we have a continuous and a discrete variable.
+ggplot(diamonds2,
+       aes(x = cut,
+           y = price)) +
+  geom_boxplot()
+
+ggplot(diamonds2,
+       aes(x = cut,
+           y = price)) +
+  geom_violin()
+
+#### Scatterplots and smoothed line plots can be suitable for two continuous variables
+ggplot(diamonds2,
+       aes(x = carat,
+           y = price)) +
+  geom_point()
+
+ggplot(diamonds2,
+       aes(x = carat,
+           y = price)) +
+  geom_smooth()
+
+
+
+
+## 3. Themes -----
+#### Titles, Labels, and Legends -----
+#### Create a ggplot object of price versus cut and the fill colors defining cut as boxplots.
+p <- ggplot(diamonds2,
+            aes(x = cut,
+                y = price)) +
+  geom_boxplot(aes(fill = cut))
+
+p
+
+#### Rename the x and y axis and give the plot a title.
+p <- p + labs(x = "Price in USD",
+              y = "Quality of the cut",
+              title = "Diamond prices based on the quality of their cut") 
+
+p
+
+#### Remove x-axis labels, x-axis ticks, and legend title.
+p <- p + labs(fill = NULL) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+p
+
+#### Make the background white with a black border and light grey gridlines.
+p <- p + theme(panel.background = element_rect(fill = "white",
+                                               colour = "black"),
+               panel.grid = element_line(colour = "grey95"))
+
+p
+
+#### Move the legend to the bottom of the plot.
+p <- p + theme(legend.position = "bottom")
+
+p
+
+
+#### Built-in Themes -----
+#### Use a built-in theme to change the style of the plot.
+p + theme_bw()
+
+#### Notice that the previous calls to theme() are now overridden.  We need to call theme() after
+#### the built-in theme to keep our original changes:
+p + theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom")
+
+
+# Exploratory vs Explanatory Plotting -----
+## 1. Exploratory Plotting -----
+### Distributions of numerical variables ----
+#### First gather only numeric variables then plot faceted histograms with density plots to see
+#### their distributions.
+diamonds %>%
+  keep(is.numeric) %>%
+  gather() %>%
+#### After using gather, unless predefined, variables will under the "key" column and their values
+#### under the "value" column
+  ggplot(aes(x = value,
+             y = ..density..)) +
+  geom_histogram() +
+  geom_density() +
+  facet_wrap(~ key,
+             scales = 'free')
+
+
+
+
+### Finding relationships -----
+#### Install and load GGally, which provides additional ggplot resources.
+install.packages("GGally")
+library(GGally)
+
+### Correlograms -----
+#### We can plot the correlations between each of the variables using correlograms.
+diamonds %>%
+  # Pipe all variables as numeric for correlation analysis.
+  mutate_all(as.numeric) %>%
+  ggcorr(label = TRUE)
+
+### Pairs plotting ----
+#### We can also use the ggpairs() function to observe relationships between multiple variables.
+diamonds %>%
+  select(carat, cut, depth, price) %>%
+  group_by(cut) %>%
+  # Stratified sampling to reduce work-time and improve readability.
+  sample_frac(size = 0.05) %>%
+  ungroup() %>%
+  ggpairs() +
+  theme_bw()
+
+
+
+## 2. Explanatory Plotting -----
+### Plot Idea 1) Are there relationships between the type of cut of diamonds and their price? -----
+#### Start with basic boxplots with cut on the x-axis and price on the y-axis.
+ggplot(diamonds,
+       aes(x = cut,
+           y = price)) +
+  geom_boxplot()
+
+#### Next, let us include violin plots with the boxplots, remove outliers from the boxplots, and
+#### add labels.
+ggplot(diamonds,
+       aes(x = cut,
+           y = price)) +
+  geom_violin() +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "Type of cut",
+       y = bquote("Price in log"[10](USD)),
+       title = "Prices of diamonds based on their cut")
+
+#### Now, add colors to the violin plots, reduce the widths of the boxplots to fit inside the
+#### violins, and add a theme
+ggplot(diamonds,
+       aes(x = cut,
+           y = price)) +
+  geom_violin(aes(fill = cut)) +
+  geom_boxplot(width = 0.1,
+               outlier.shape = NA) +
+  labs(x = "Type of cut",
+       y = bquote("Price in log"[10](USD)),
+       title = "Prices of diamonds based on their cut") +
+  theme_bw()
+
+#### Finally, change the y-axis to a log10 scale, remove the x-axis labels, move the legend to the
+#### bottom, and add text to indicate the number of observations for each type of cut.
+
+#### First, calculate the number of observations for each cut type by using the group_by() and
+#### summarize() functions.
+d_n <- diamonds %>%
+  group_by(cut) %>%
+  summarize(n = n())
+
+#### Generate the final plot!
+ggplot(diamonds,
+       aes(x = cut,
+           y = price)) +
+  geom_violin(aes(fill = cut)) + 
+  geom_boxplot(width = 0.1,
+               outlier.shape = NA) +
+  # Use the d2 data set and set the value for y to place the text right below each of the violin
+  # plots.
+  geom_text(data = d_n,
+            aes(y = 200,
+                label = paste("n =", n))) +
+  labs(x = "Type of cut",
+       y = bquote("Price in log"[10](USD)),
+       title = "Prices of diamonds based on their cut",
+       fill = NULL) +
+  scale_y_log10() +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank())
+
+
+### Plot Idea 2) Do diamond prices vary by weight and cut? ----
+ggplot(diamonds, aes(x = carat, 
+                     y = price)) +
+  geom_point(aes(color = cut),
+             alpha = 0.1,
+             size = 1) + 
+  stat_smooth(method = "lm",
+              se = FALSE) +
+  facet_wrap(~ cut) +
+  labs(x = bquote("Diamond weight in log"[10](USD)),
+       y = bquote("Price in log"[10](USD)),
+       title = "Prices of Diamonds by their Weight and Cut type") +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_bw() +
+  theme(legend.position = "none")
+
+
+#### More visualization resources:
+####
+#### https://www.rstudio.com/resources/cheatsheets/
+####
+#### https://r-graph-gallery.com/ggplot2-package.html
+
+##Importing Your Dataset
+#If your dataset is saved as a .csv, make sure it is the 
+#plain .csv format (i.e., "Comma Separated Values"; no other text in the label)
+
+library(tidyverse) # required package
+data <- read_csv("Title of Excel File.csv")
+
+#Excel files can be read into R using the "readxl" package
+library(readxl) # required package
+data <- read_xlsx("Title of Excel File.xlsx")
