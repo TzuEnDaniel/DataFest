@@ -1,0 +1,80 @@
+library(quanteda)
+library(quanteda.textstats)
+library(quanteda.textplots)
+library(quanteda.textmodels)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(tidyverse)
+
+datafest <- read.csv("questionposts.csv")
+cateData <- read.csv('questions.csv')
+
+pa_text <- filter(datafest, StateAbbr == "PA")
+tibble_cat<-as_tibble(cateData)
+tibble_cat<-tibble_cat%>%
+  separate(AskedOnUtc,into = c('Date','Time'),sep=11)
+tibble_cat<-tibble_cat%>%
+  separate(Date,into = c('Year','Month','Day'),sep='-')
+tibble_catDate<-tibble_cat%>%
+  unite(NewDate,Year,Month,sep='-')
+GroupCate<-tibble_catDate%>%
+  group_by(NewDate,Category)%>%
+  summarise(count=n())
+GroupYear<-tibble_cat%>%
+  group_by(Year,Category)%>%
+  summarise(count=n())
+GroupStateYear<-tibble_cat%>%
+  filter(Year=='2021')%>%
+  group_by(Month,StateAbbr)%>%
+  filter(StateAbbr!='PA')%>%
+  summarise(count=n())
+StateCount<-GroupStateYear%>%group_by(StateAbbr)%>%
+  summarise(count=n())
+str(GroupCate)
+GroupYear<-read.csv('GroupYear.csv')
+GroupYearDesc<-GroupYear%>%
+  arrange(Year,desc(count))
+GroupCate$NewDate<-as.character(GroupCate)
+GroupCate<-as.data.frame(GroupCate)
+GroupStateYear<-GroupStateYear%>%
+  arrange(Month,desc(count))
+write.csv(GroupStateYear,".\\GroupStateYear.csv", row.names=FALSE)
+df_cat<-as.data.frame(tibble_cat)
+str(df_cat)
+df_cat$Month<-factor(df_cat$Month)
+
+df_catCountPerMonth<-df_cat%>%
+  group_by(Month,Category)%>%
+  summarise(count=n())
+df_catCountPerState<-df_cat%>%
+  group_by(StateAbbr,Category)%>%
+  summarise(count=n())
+MonthFreqPlot<-ggplot(df_cat, aes(x = Month, fill  = Category)) + 
+  geom_bar(stat='count') + 
+  ggtitle("Month Frequency Plot")
+
+MonthFreqPlot 
+
+#+  scale_fill_manual(values = c("#ee8c68",
+                               "#ba443c",
+                               "#ab1e3e",
+                               "#96a46b",
+                               "#72282b",
+                               "#204132",
+                               "#d07f62",
+                               "#434a16",
+                               "#984900",
+                               "#69a68a"))
+ggplot(df_cat, aes(x = StateAbbr, fill  = Category)) + 
+  geom_bar(stat='count') + 
+  ggtitle("Frequency Plot Per State")
+GroupYear$Year<-factor(GroupYear$Year)
+YearCatPlot<-GroupYear %>%
+  ggplot( aes(x=Year, y=count, group=Category, color=Category)) +
+  geom_line()+
+  ggtitle('Category line chart')
+
+YearCatPlot
+
+df_cat
